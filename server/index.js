@@ -14,13 +14,8 @@ const typeDefs = `
     title: String
     completed: Boolean
     userId: ID
+    user: User
   }
-  type Query {
-    hello: String
-    getAllTodos: [Todo]
-    getAllUsers: [User]
-    getUser(id: ID!): User
-  }   
   type User {
     id: ID!
     name: String
@@ -28,23 +23,73 @@ const typeDefs = `
     email: String
     website: String
     phone: String
+    }
+
+type TodoWithUsername {
+    id: ID!
+    title: String
+    completed: Boolean
+    userId: ID
+    username: String
   }
-`;
+
+type Query {
+      hello: String
+      getAllTodos: [Todo]
+      getAllUsers: [User]
+      getUser(id: ID!): User
+      getTodosWithUsernames: [TodoWithUsername]
+    }   
+    `;
 
 const resolvers = {
+  Todo: {
+    user: async (todo) => {
+      const response = await fetch(
+        `https://jsonplaceholder.typicode.com/users/${todo.id}`
+      );
+      return response.json();
+    },
+  },
+
   Query: {
     hello: () => "Hello World!",
     getAllTodos: async () => {
-      const response = await fetch("https://jsonplaceholder.typicode.com/todos");
+      const response = await fetch(
+        "https://jsonplaceholder.typicode.com/todos"
+      );
       return response.json();
     },
     getAllUsers: async () => {
-      const response = await fetch("https://jsonplaceholder.typicode.com/users");
+      const response = await fetch(
+        "https://jsonplaceholder.typicode.com/users"
+      );
       return response.json();
     },
     getUser: async (_, { id }) => {
-      const response = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`);
+      const response = await fetch(
+        `https://jsonplaceholder.typicode.com/users/${id}`
+      );
       return response.json();
+    },
+
+    getTodosWithUsernames: async () => {
+      const todosResponse = await fetch(
+        "https://jsonplaceholder.typicode.com/todos"
+      );
+      const usersResponse = await fetch(
+        "https://jsonplaceholder.typicode.com/users"
+      );
+      const todos = await todosResponse.json();
+      const users = await usersResponse.json();
+
+      return todos.map((todo) => {
+        const user = users.find((user) => user.id === todo.userId);
+        return {
+          ...todo,
+          name: user ? user.name : null,
+        };
+      });
     },
   },
 };

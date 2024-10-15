@@ -1,41 +1,41 @@
-<script setup lang="ts">
-defineProps<{
-  msg: string
-}>()
-</script>
-
 <template>
-  <div class="greetings">
-    <h1 class="green">{{ msg }}</h1>
-    <h3>
-      You’ve successfully created a project with
-      <a href="https://vitejs.dev/" target="_blank" rel="noopener">Vite</a> +
-      <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>. What's next?
-    </h3>
+  <div>
+    <h1>{{ msg }}</h1>
+    <ul>
+      <li v-for="todo in todos" :key="todo.id">{{ todo.title }} - {{ todo.username }}</li>
+    </ul>
   </div>
 </template>
 
-<style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
-}
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import { useQuery } from '@vue/apollo-composable';
+import gql from 'graphql-tag';
 
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
-  text-align: center;
-}
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
+const GET_TODOS_WITH_USERNAMES = gql`
+  query GetTodosWithUsernames {
+    getTodosWithUsernames {
+      id
+      title
+      username
+    }
   }
+`;
+
+interface Todo {
+  id: number;
+  title: string;
+  username: string;
 }
-</style>
+
+const msg = ref('Hello World');
+const todos = ref<Todo[]>([]);
+
+const { result, loading, error } = useQuery(GET_TODOS_WITH_USERNAMES);
+
+watch(result, (newResult) => {
+  if (newResult && newResult.getTodosWithUsernames) {
+    todos.value = newResult.getTodosWithUsernames;
+  }
+});
+</script>
